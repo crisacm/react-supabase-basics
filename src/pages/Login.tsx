@@ -1,4 +1,3 @@
-import { useAuth } from "../context/AuthContext";
 import { loginSchema } from "../schemas/userSchemas";
 import type { LoginSchema } from "../schemas/userSchemas";
 import { useForm } from "react-hook-form";
@@ -6,8 +5,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router";
 import Input from "../components/Input";
 import Button from "../components/Button";
+import ButtonBorderless from "../components/ButtonBorderless";
 import Card from "../components/Card";
 import ErrorInput from "../components/ErrorInput";
+import { useAuthActions } from "../hooks/useAuthActions";
+import { useToast } from "../components/ToastProvider";
+import { useEffect } from "react";
+import googleLogo from "../assets/Google.svg";
+import facebookLogo from "../assets/Facebook.svg";
+import appleLogo from "../assets/Apple.svg";
 
 /**
  * Login page.
@@ -35,56 +41,96 @@ export default function Login() {
     },
   });
 
-  const { login } = useAuth();
   const navigate = useNavigate();
+  const { showToast } = useToast();
+  const { login, isLoading, error } = useAuthActions();
 
-  const onSubmit = (data: any) => {
+  const onSubmit = async (data: any) => {
     try {
-      login(data.email, data.password);
-      navigate("/");
-    } catch (error) {
+      const { success } = await login(data.email, data.password);
+      if (success) navigate("/");
+    } catch (error: any) {
       console.log(error);
     }
+  };
+
+  useEffect(() => {
+    if (error) {
+      showToast(error, "error");
+    }
+  }, [error]);
+
+  const onExternalLogin = () => {
+    showToast("External login not implemented yet", "warning");
   };
 
   return (
     <div className="h-screen container mx-auto flex items-center justify-center p-4 sm:p-6">
       <Card>
-        <h1 className="text-4xl font-bold text-gray-600 p-2">Log in</h1>
-        <p className="text-gray-600 px-2 py-4">
-          Welcome, if you do not have a user you can register one in the{" "}
-          <a href="/register" className="text-blue-600 font-semibold">
-            following link
-          </a>
-          .
-        </p>
-        <form className="mt-4 space-y-4" onSubmit={handleSubmit(onSubmit)}>
-          <Input type="text" placeholder="Email" register={register("email")} />
-          {errors.email && (
-            <ErrorInput errors={errors.email?.message as string} />
-          )}
-          <Input
-            type="password"
-            placeholder="Password"
-            register={register("password")}
-          />
-          {errors.password && (
-            <ErrorInput errors={errors.password?.message as string} />
-          )}
-          <p className="text-gray-600 px-2">
-            Forgot your password? Don't worry, you can request a change here{" "}
+        <Card.Body>
+          <h1 className="text-4xl font-bold text-gray-600 p-2 text-center">
+            Welcome back!
+          </h1>
+          <p className="text-gray-600 px-2 py-4 text-center">
+            Hey, Enter your details to get sign in to your account
+          </p>
+          <form className="mt-4 space-y-4" onSubmit={handleSubmit(onSubmit)}>
+            <Input
+              type="text"
+              placeholder="Email"
+              register={register("email")}
+            />
+            {errors.email && (
+              <ErrorInput errors={errors.email?.message as string} />
+            )}
+            <Input
+              type="password"
+              placeholder="Password"
+              register={register("password")}
+            />
+            {errors.password && (
+              <ErrorInput errors={errors.password?.message as string} />
+            )}
             <a
               href="/request-change-password"
-              className="text-blue-600 font-semibold"
+              className="text-blue-800 font-semibold px-2 flex justify-end"
             >
-              here
+              Forgot your password?
             </a>
-            .
-          </p>
-          <Button type="submit" className="mt-6">
-            Login
-          </Button>
-        </form>
+            <Button type="submit" className="mt-6" loading={isLoading}>
+              Login
+            </Button>
+            <p className="text-gray-600 px-2 text-center py-2">
+              Or sign in with
+            </p>
+            <div className="flex justify-center gap-4 pb-6">
+              <ButtonBorderless onClick={onExternalLogin} type="button">
+                <div className="flex items-center gap-2 group">
+                  <img src={googleLogo} alt="Google" className="w-5 h-5" />
+                  Google
+                </div>
+              </ButtonBorderless>
+              <ButtonBorderless onClick={onExternalLogin} type="button">
+                <div className="flex items-center gap-2 group">
+                  <img src={facebookLogo} alt="Facebook" className="w-5 h-5" />
+                  Facebook
+                </div>
+              </ButtonBorderless>
+              <ButtonBorderless onClick={onExternalLogin} type="button">
+                <div className="flex items-center gap-2 group">
+                  <img src={appleLogo} alt="Apple" className="w-5 h-5" />
+                  Apple
+                </div>
+              </ButtonBorderless>
+            </div>
+            <p className="text-gray-600 px-2">
+              Don't have an account?{" "}
+              <a href="/register" className="text-blue-800 font-semibold px-2">
+                Register here
+              </a>
+            </p>
+          </form>
+        </Card.Body>
       </Card>
     </div>
   );
